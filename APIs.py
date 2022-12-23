@@ -1,16 +1,18 @@
 import requests
-import json
-from selenium import webdriver
 import urllib.parse
+import json
 import os
 import time
-from selenium.webdriver.common.by import By
 
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def getContact(number:str) -> str:
-    with open("config.json", encoding='utf-8') as f:
-            config = json.load(f)
-    url = config['NUMBERBOOK_URL']+"?getName=true&phone="+number
+    numberbook_url = os.getenv("NUMBERBOOK_URL")
+    url = numberbook_url+"?getName=true&phone="+number
     try:
         response = requests.get(url)
         payload = json.dumps(response.json()) 

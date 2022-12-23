@@ -1,18 +1,21 @@
-import tekore as tk
-import json, random
+import json
+import random
+import re
+import os
 
 from camel_tools.disambig.mle import MLEDisambiguator
-import re
-from collections import Counter
+import tekore as tk
 import numpy as np
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class spotify(object):
     def __init__(self):
-        with open("config.json", encoding='utf-8') as f:
-            config = json.load(f)
+        spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
+        spotify_secret_key = os.getenv("SPOTIFY_SECRET_KEY")
         
-        token = tk.request_client_token(config['SPOTIFY_CLIENT_ID'], config['SPOTIFY_SECRET_KEY'])
+        token = tk.request_client_token(spotify_client_id, spotify_secret_key)
         self.spotify = tk.Spotify(token)
         self.genres = self.spotify.recommendation_genre_seeds()
 
