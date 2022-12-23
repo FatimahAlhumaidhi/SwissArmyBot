@@ -1,9 +1,14 @@
-from telegram.update import Update
+import os
+import json
+
 from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
-import os, requests, json, re
+from telegram.update import Update
+from dotenv import load_dotenv
 
 from APIs import getContact, lookUp
-from models import spellCheck, spotify
+from models import spotify
+
+load_dotenv()
 
 MESSAGES = {
 	'start' : 'أهلا!، هذا البوت فيه أوامر عشوائية سويتها بغرض التجربة، استخدم /help عشان تعرف الأوامر المقبولة',
@@ -65,10 +70,9 @@ def grammer(update: Update, context: CallbackContext):
 	update.message.reply_text('sorry, I have not implement this yet.')
 	
 def setUp():
-	with open("config.json", encoding='utf-8') as f:
-		config = json.load(f)
+	telegram_token = os.getenv("TELEGRAM_TOKEN")
 
-	updater = Updater(config['TELEGRAM_TOKEN'], use_context=True)
+	updater = Updater(telegram_token, use_context=True)
 	updater.dispatcher.add_handler(CommandHandler('start', start))
 	updater.dispatcher.add_handler(CommandHandler('help', help))
 	updater.dispatcher.add_handler(CommandHandler('gimme', spoti))
@@ -86,5 +90,5 @@ updater = setUp()
 updater.start_polling()
 print('now running:')
 updater.idle()
-# updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=config['TELEGRAM_TOKEN'])
-# updater.bot.setWebhook('https://arabicfixmebot.herokuapp.com/' + config['TELEGRAM_TOKEN'])
+# updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=telegram_token)
+# updater.bot.setWebhook('https://arabicfixmebot.herokuapp.com/' + telegram_token)
