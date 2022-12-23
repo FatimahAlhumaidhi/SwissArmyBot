@@ -74,9 +74,6 @@ def setUp():
 	updater.dispatcher.add_handler(CommandHandler('gimme', spoti))
 	updater.dispatcher.add_handler(CommandHandler('whodis', numberBook))
 	updater.dispatcher.add_handler(CommandHandler('whatdis', fromDictionary))
-
-	updater.dispatcher.add_handler(MessageHandler(Filters.text, unknown))
-	updater.dispatcher.add_handler(MessageHandler(Filters.command, unknown))
 		
 	updater.dispatcher.add_handler(MessageHandler(Filters.text, unknown))
 	updater.dispatcher.add_handler(MessageHandler(Filters.command, unknown))
