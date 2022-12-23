@@ -5,21 +5,16 @@ import os, requests, json, re
 from APIs import getContact, lookUp
 from models import spellCheck, spotify
 
-
 MESSAGES = {
 	'start' : 'أهلا!، هذا البوت فيه أوامر عشوائية سويتها بغرض التجربة، استخدم /help عشان تعرف الأوامر المقبولة',
-	'help' : r"""أوامر البوت:
+	'help' : """أوامر البوت:
 	/spell يتحقق من صحة الإملاء في جملة عربية
 	/gimme يرسل لك أغنية عشوائية
 	/whatdis يرجع لك تعريف كلمة من معجم صغير
 	/whodis ترسل رقم سعودي ويعطيك الأسماء المسجلة له
 	/correct يصحح لك صياغة جملة عربية""",
-	'unknown' : r'استخدم \help عشان تعرف الأوامر المقبولة'
+	'unknown' : 'استخدم /help عشان تعرف الأوامر المقبولة'
 }
-with open("config.json", encoding='utf-8') as f:
-	config = json.load(f)
-
-updater = Updater(config['TELEGRAM_TOKEN'], use_context=True)
 	
 def start(update: Update, context: CallbackContext):
 	update.message.reply_text(MESSAGES['start'])
@@ -41,7 +36,7 @@ def spoti(update: Update, context: CallbackContext):
 
 
 def process(dictlist, update: Update, context: CallbackContext):
-    if type(dictlist) != dict:
+    if type(dictlist) == str:
         update.message.reply_text(dictlist)
         return
     acceptableDictionaries = ['المعجم: الرائد', 'المعجم: المعجم الوسيط',
@@ -53,7 +48,7 @@ def process(dictlist, update: Update, context: CallbackContext):
             response = response + definition['meaning'] + '\n'
             response = response + definition['dictionary'] + '\n'
             update.message.reply_text(response)
-			
+
 
 def fromDictionary(update: Update, context: CallbackContext):
 	text = update.message.text.replace('/whatdis ', '') 
@@ -91,5 +86,8 @@ def setUp():
 
 
 updater = setUp()
-updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=config['TELEGRAM_TOKEN'])
-updater.bot.setWebhook('https://arabicfixmebot.herokuapp.com/' + config['TELEGRAM_TOKEN'])
+updater.start_polling()
+print('now running:')
+updater.idle()
+# updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=config['TELEGRAM_TOKEN'])
+# updater.bot.setWebhook('https://arabicfixmebot.herokuapp.com/' + config['TELEGRAM_TOKEN'])
