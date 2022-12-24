@@ -66,3 +66,46 @@ def lookUp(word:str) -> str:
 
 
     
+def get_animes_current_season() -> str:
+    jikan_url = "https://api.jikan.moe/v4/seasons/now?page={page_number}"
+    response = requests.get(jikan_url.format(page_number=1))
+    if response.status_code != 200:
+        return "Please try again later"
+    
+    all_current_season_anime = response.json()
+    if all_current_season_anime["pagination"]["items"]["count"] <= 0:
+        return "No animes this season"
+
+    telegram_message = f"There is {all_current_season_anime['pagination']['items']['total']} this season: \n"
+    anime_number = 1
+    while True:
+        for anime in all_current_season_anime["data"]:
+            title = anime["title"] if anime["title"] else "مدري"
+            score = anime["score"] if anime["score"] else "مدري"
+            number_of_episodes = anime["episodes"] if anime["episodes"] else "مدري"
+            status = anime["status"] if anime["status"] else "مدري"
+            broadcast_info = anime["broadcast"] if anime["broadcast"] else None
+            broadcast_day = "مدري"
+            if broadcast_info is not None:
+                broadcast_day = broadcast_info["day"] if broadcast_info["day"] else "مدري"
+            all_generes = anime["genres"] + anime["themes"] + anime["demographics"]
+            all_generes = ", ".join([genre["name"] for genre in all_generes])
+            trailer_info =  anime["trailer"] if anime["trailer"] else None
+            trailer = "مدري"
+            if trailer_info is not None:
+                trailer = trailer_info["url"] if trailer_info["url"] else "مدري"
+            telegram_message = telegram_message + f"{anime_number}- Title: {title}\n\t Number of episodes: {number_of_episodes}\n\t Rating: {score}\n\t Status: {status}\n\t Broadcast day: {broadcast_day}\n\t Genres: {all_generes}\n\t Trailer: {trailer}\n\n"
+            anime_number = anime_number + 1
+        if not all_current_season_anime["pagination"]["has_next_page"]:
+            break
+
+        response = requests.get(jikan_url.format(page_number=all_current_season_anime["pagination"]["current_page"] + 1))
+        all_current_season_anime = []
+        if response.status_code == 200:
+            all_current_season_anime = response.json()
+        time.sleep(3)
+
+    return telegram_message
+
+
+

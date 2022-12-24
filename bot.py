@@ -5,7 +5,7 @@ from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandle
 from telegram.update import Update
 from dotenv import load_dotenv
 
-from APIs import getContact, lookUp
+from APIs import getContact, lookUp, get_animes_current_season
 from models import spotify
 
 load_dotenv()
@@ -13,6 +13,7 @@ load_dotenv()
 MESSAGES = {
 	'start' : 'أهلا!، هذا البوت فيه أوامر عشوائية سويتها بغرض التجربة، استخدم /help عشان تعرف الأوامر المقبولة',
 	'help' : """أوامر البوت:
+	/animes_current_season يرجع معلومات عن انميات هذا الموسم
 	/spell يتحقق من صحة الإملاء في جملة عربية
 	/gimme يرسل لك أغنية عشوائية
 	/whatdis يرجع لك تعريف كلمة من معجم صغير
@@ -38,6 +39,9 @@ def spoti(update: Update, context: CallbackContext):
 	client = spotify()
 	song = client.randomSong()
 	update.message.reply_text(song)
+
+def animes_current_season(update: Update, context: CallbackContext):
+	update.message.reply_text(get_animes_current_season())
 
 
 def process(dictlist, update: Update, context: CallbackContext):
@@ -78,6 +82,7 @@ def setUp():
 	updater.dispatcher.add_handler(CommandHandler('gimme', spoti))
 	updater.dispatcher.add_handler(CommandHandler('whodis', numberBook))
 	updater.dispatcher.add_handler(CommandHandler('whatdis', fromDictionary))
+	updater.dispatcher.add_handler(CommandHandler('animes_current_season', animes_current_season))
 		
 	updater.dispatcher.add_handler(MessageHandler(Filters.text, unknown))
 	updater.dispatcher.add_handler(MessageHandler(Filters.command, unknown))
