@@ -3,12 +3,13 @@ import urllib.parse
 import json
 import os
 import time
+from typing import List
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from dotenv import load_dotenv
-
-load_dotenv()
+#from selenium import webdriver
+#from selenium.webdriver.common.by import By
+#from dotenv import load_dotenv
+#
+#load_dotenv()
 
 def getContact(number:str) -> str:
     numberbook_url = os.getenv("NUMBERBOOK_URL")
@@ -66,7 +67,7 @@ def lookUp(word:str) -> str:
 
 
     
-def get_animes_current_season() -> str:
+def get_animes_current_season() -> List[str]:
     jikan_url = "https://api.jikan.moe/v4/seasons/now?page={page_number}"
     response = requests.get(jikan_url.format(page_number=1))
     if response.status_code != 200:
@@ -77,6 +78,7 @@ def get_animes_current_season() -> str:
         return "No animes this season"
 
     telegram_message = f"There is {all_current_season_anime['pagination']['items']['total']} this season: \n"
+    telegram_messages = []
     anime_number = 1
     while True:
         for anime in all_current_season_anime["data"]:
@@ -94,8 +96,11 @@ def get_animes_current_season() -> str:
             trailer = "مدري"
             if trailer_info is not None:
                 trailer = trailer_info["url"] if trailer_info["url"] else "مدري"
+
             telegram_message = telegram_message + f"{anime_number}- Title: {title}\n\t Number of episodes: {number_of_episodes}\n\t Rating: {score}\n\t Status: {status}\n\t Broadcast day: {broadcast_day}\n\t Genres: {all_generes}\n\t Trailer: {trailer}\n\n"
+            telegram_messages.append(telegram_message)
             anime_number = anime_number + 1
+
         if not all_current_season_anime["pagination"]["has_next_page"]:
             break
 
@@ -103,9 +108,11 @@ def get_animes_current_season() -> str:
         all_current_season_anime = []
         if response.status_code == 200:
             all_current_season_anime = response.json()
+            telegram_message = ""
+
         time.sleep(3)
 
-    return telegram_message
+    return telegram_messages
 
 
 
