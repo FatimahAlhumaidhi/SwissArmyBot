@@ -41,7 +41,9 @@ def spoti(update: Update, context: CallbackContext):
 	update.message.reply_text(song)
 
 def animes_current_season(update: Update, context: CallbackContext):
-	update.message.reply_text(get_animes_current_season())
+	messages = get_animes_current_season()
+	for message in messages:
+		update.message.reply_text(message)
 
 
 def process(dictlist, update: Update, context: CallbackContext):
