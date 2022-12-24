@@ -5,11 +5,11 @@ import os
 import time
 from typing import List
 
-#from selenium import webdriver
-#from selenium.webdriver.common.by import By
-#from dotenv import load_dotenv
-#
-#load_dotenv()
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def getContact(number:str) -> str:
     numberbook_url = os.getenv("NUMBERBOOK_URL")
@@ -77,7 +77,8 @@ def get_animes_current_season() -> List[str]:
     if all_current_season_anime["pagination"]["items"]["count"] <= 0:
         return "No animes this season"
 
-    telegram_message = f"There is {all_current_season_anime['pagination']['items']['total']} this season: \n"
+    total_animes_current_season = all_current_season_anime['pagination']['items']['total']
+    telegram_message = f"There is {total_animes_current_season} this season: \n"
     telegram_messages = []
     anime_number = 1
     while True:
@@ -98,7 +99,9 @@ def get_animes_current_season() -> List[str]:
                 trailer = trailer_info["url"] if trailer_info["url"] else "مدري"
 
             telegram_message = telegram_message + f"{anime_number}- Title: {title}\n\t Number of episodes: {number_of_episodes}\n\t Rating: {score}\n\t Status: {status}\n\t Broadcast day: {broadcast_day}\n\t Genres: {all_generes}\n\t Trailer: {trailer}\n\n"
-            telegram_messages.append(telegram_message)
+            if anime_number % 10 == 0 or anime_number == total_animes_current_season:
+                telegram_messages.append(telegram_message)
+                telegram_message = ""
             anime_number = anime_number + 1
 
         if not all_current_season_anime["pagination"]["has_next_page"]:
@@ -108,7 +111,6 @@ def get_animes_current_season() -> List[str]:
         all_current_season_anime = []
         if response.status_code == 200:
             all_current_season_anime = response.json()
-            telegram_message = ""
 
         time.sleep(3)
 
