@@ -1,5 +1,6 @@
 import os
-import json
+from datetime import time
+import pytz
 
 from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
 from telegram.update import Update
@@ -10,6 +11,7 @@ from models import spotify
 
 load_dotenv()
 
+D7_ID = 553300106
 MESSAGES = {
 	'start' : 'أهلا!، هذا البوت فيه أوامر عشوائية سويتها بغرض التجربة، استخدم /help عشان تعرف الأوامر المقبولة',
 	'help' : """أوامر البوت:
@@ -40,10 +42,10 @@ def spoti(update: Update, context: CallbackContext):
 	song = client.randomSong()
 	update.message.reply_text(song)
 
-def animes_current_season(update: Update, context: CallbackContext):
+async def animes_current_season(context: CallbackContext):
 	messages = get_animes_current_season()
 	for message in messages:
-		update.message.reply_text(message)
+		await context.bot.send_message(chat_id=D7_ID, text=message)
 
 
 def process(dictlist, update: Update, context: CallbackContext):
@@ -84,7 +86,6 @@ def setUp():
 	updater.dispatcher.add_handler(CommandHandler('gimme', spoti))
 	updater.dispatcher.add_handler(CommandHandler('whodis', numberBook))
 	updater.dispatcher.add_handler(CommandHandler('whatdis', fromDictionary))
-	updater.dispatcher.add_handler(CommandHandler('animes_current_season', animes_current_season))
 		
 	updater.dispatcher.add_handler(MessageHandler(Filters.text, unknown))
 	updater.dispatcher.add_handler(MessageHandler(Filters.command, unknown))
@@ -92,10 +93,11 @@ def setUp():
 	return updater
 
 
-
-updater = setUp()
-updater.start_polling()
-print('now running:')
-updater.idle()
-# updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=telegram_token)
-# updater.bot.setWebhook('https://arabicfixmebot.herokuapp.com/' + telegram_token)
+if __name__ == "__main__":
+	updater = setUp()
+	updater.job_queue.run_daily(animes_current_season, time=time(16, 0, 0, 0, pytz.UTC), days=2)
+	updater.start_polling()
+	print('now running:')
+	updater.idle()
+	# updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=telegram_token)
+	# updater.bot.setWebhook('https://arabicfixmebot.herokuapp.com/' + telegram_token)
