@@ -11,11 +11,12 @@ from models import spotify
 
 load_dotenv()
 
-D7_ID = 553300106
+IDs = [553300106, 93606182]
+# Use this when bot is added to group
+GROUP = "@animestuffss"
 MESSAGES = {
 	'start' : 'أهلا!، هذا البوت فيه أوامر عشوائية سويتها بغرض التجربة، استخدم /help عشان تعرف الأوامر المقبولة',
 	'help' : """أوامر البوت:
-	/animes_current_season يرجع معلومات عن انميات هذا الموسم
 	/spell يتحقق من صحة الإملاء في جملة عربية
 	/gimme يرسل لك أغنية عشوائية
 	/whatdis يرجع لك تعريف كلمة من معجم صغير
@@ -42,10 +43,12 @@ def spoti(update: Update, context: CallbackContext):
 	song = client.randomSong()
 	update.message.reply_text(song)
 
-async def animes_current_season(context: CallbackContext):
-	messages = get_animes_current_season()
-	for message in messages:
-		await context.bot.send_message(chat_id=D7_ID, text=message)
+def animes_current_season(context: CallbackContext):
+	for id in IDs:
+		context.bot.send_message(chat_id=id, text="You will receieve this weekly every Tues at 11:35 PM")
+		messages = get_animes_current_season()
+		for message in messages:
+			context.bot.send_message(chat_id=id, text=message)
 
 
 def process(dictlist, update: Update, context: CallbackContext):
@@ -76,7 +79,7 @@ def checkSpell(update: Update, context: CallbackContext):
 
 def grammer(update: Update, context: CallbackContext):
 	update.message.reply_text('sorry, I have not implement this yet.')
-	
+
 def setUp():
 	telegram_token = os.getenv("TELEGRAM_TOKEN")
 
@@ -95,7 +98,8 @@ def setUp():
 
 if __name__ == "__main__":
 	updater = setUp()
-	updater.job_queue.run_daily(animes_current_season, time=time(16, 0, 0, 0, pytz.UTC), days=2)
+	job_queue = updater.job_queue
+	job_queue.run_daily(animes_current_season, time=time(23, 35, 0, 0, pytz.timezone("Asia/Riyadh")), days=(1,))
 	updater.start_polling()
 	print('now running:')
 	updater.idle()
