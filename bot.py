@@ -98,8 +98,7 @@ async def MangaChapter(update: Update, context: CallbackContext):
 	os.remove(info['file'])
 
 
-def setUp():
-	telegram_token = os.getenv("TELEGRAM_TOKEN")
+def setUp(telegram_token):
 
 	updater = Updater(telegram_token, use_context=True)
 	dispatcher = updater.dispatcher
@@ -118,10 +117,11 @@ def setUp():
 
 
 if __name__ == "__main__":
-	updater = setUp()
+	telegram_token = os.getenv("TELEGRAM_TOKEN")
+	updater = setUp(telegram_token)
 
 	updater.start_polling()
 	print('now running')
-	updater.idle()
-	# updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=telegram_token)
-	# updater.bot.setWebhook('https://arabicfixmebot.herokuapp.com/' + telegram_token)
+	# updater.idle()
+	updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=telegram_token)
+	updater.bot.setWebhook('https://theswissarmybot.herokuapp.com/' + telegram_token)

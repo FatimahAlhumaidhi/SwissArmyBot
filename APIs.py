@@ -19,8 +19,7 @@ def getContact(number:str) -> str:
     url = numberbook_url+"?getName=true&phone="+number
     try:
         response = requests.get(url)
-        payload = json.dumps(response.json()) 
-        data = json.loads(payload)
+        data = response.json()
         names = []
         if data['response'] == 'success':
            for elem in data['data']:
