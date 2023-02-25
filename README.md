@@ -6,7 +6,8 @@ This is a Python Telegram Bot built using the `python-telegram-bot` library. The
 
 Install bot dependencies by running the following command:
 
-```pip install -r requirements.txt
+```
+pip install -r requirements.txt
 ```
 
 ## Configuration
@@ -17,7 +18,8 @@ create a new file `.env` and add your bot token and any other necessary keys
 
 run the bot, simply run the `bot.py` file using Python:
 
-```python bot.py
+```
+python bot.py
 ```
 
 The bot will then start and listen for incoming messages on your Telegram Bot.
