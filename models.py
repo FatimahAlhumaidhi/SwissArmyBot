@@ -40,7 +40,7 @@ class spotify(object):
             for artist in track['artists']:
                 song['artists'].append(artist['name'])
             respond = "NAME:\n" + song['name'] + '\n'
-            respond = respond + 'GENRES:' + str(genres) + '\n'
+            respond = respond + 'GENRE:' + genres[0] + '\n'
             respond = respond + 'URL:\n' + song['url'] + '\n'
             respond = respond + 'ARTISTS:\n' + str(song['artists'])
             songList.append(respond)

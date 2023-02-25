@@ -8,20 +8,18 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
 
 from APIs import getContact, lookUp, get_animes_current_season, getChapter
-from models import spotify, spellCheck
+from models import spotify
 
 load_dotenv()
 
 MESSAGES = {
 	'start' : 'أهلا!، هذا البوت فيه أوامر عشوائية سويتها بغرض التجربة، استخدم /help عشان تعرف الأوامر المقبولة',
 	'help' : """أوامر البوت:
-	/spell يتحقق من صحة الإملاء في جملة عربية
 	/randomsong يرسل لك أغنية عشوائية
 	/define يرجع لك تعريف كلمة في معجم
 	/whodis ترسل رقم سعودي ويعطيك الأسماء المسجلة له
 	/animeseason يرسل لك لستة بأنميات الموسم أسبوعيا
-	/GetLatestChapter يرسل لك آخر تشابتر نزل لمانجا بترجمة انجليزية
-	/correct يصحح لك صياغة جملة عربية""",
+	/getlatestchapter يرسل لك آخر تشابتر نزل لمانجا بترجمة انجليزية""",
 	'unknown' : 'استخدم /help عشان تعرف الأوامر المقبولة'
 }
 	
@@ -87,12 +85,12 @@ def fromDictionary(update: Update):
 
 
 	
-async def MangaChapter(update: Update, context: CallbackContext):
-	name = update.message.text.replace('/GetLatestChapter ', '') 
+def MangaChapter(update: Update, context: CallbackContext):
+	name = update.message.text.replace('/getlatestchapter ', '') 
 	update.message.reply_text('please wait, this may take a while.')
 	info = getChapter(name)
 	if info['success']:
-		await context.bot.send_document(chat_id=update.effective_chat.id,document=open(info['file'], 'rb'), filename=info['file'])
+		context.bot.send_document(chat_id=update.effective_chat.id,document=open(info['file'], 'rb'), filename=info['file'])
 	else:
 		update.message.reply_text(info['Exception'])
 	os.remove(info['file'])
@@ -108,7 +106,7 @@ def setUp(telegram_token):
 	dispatcher.add_handler(CommandHandler('whodis', numberBook))
 	dispatcher.add_handler(CommandHandler('define', fromDictionary))
 	dispatcher.add_handler(CommandHandler('animeseason', activate_animes_current_season))
-	dispatcher.add_handler(CommandHandler('GetLatestChapter', MangaChapter))
+	dispatcher.add_handler(CommandHandler('getlatestchapter', MangaChapter))
 		
 	dispatcher.add_handler(MessageHandler(Filters.text, unknown))
 	dispatcher.add_handler(MessageHandler(Filters.command, unknown))
@@ -118,10 +116,11 @@ def setUp(telegram_token):
 
 if __name__ == "__main__":
 	telegram_token = os.getenv("TELEGRAM_TOKEN")
+	webhook = os.getenv("WEB_HOOK")
 	updater = setUp(telegram_token)
 
-	updater.start_polling()
-	print('now running')
+	# updater.start_polling()
+	# print('now running')
 	# updater.idle()
 	updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=telegram_token)
-	updater.bot.setWebhook('https://theswissarmybot.herokuapp.com/' + telegram_token)
+	updater.bot.setWebhook(webhook + telegram_token)
