@@ -1,9 +1,5 @@
-import json
-import random
-import re
-import os
+import json, random, re, os
 
-from camel_tools.disambig.mle import MLEDisambiguator
 import tekore as tk
 import numpy as np
 from dotenv import load_dotenv
@@ -24,7 +20,7 @@ class spotify(object):
 
         response = self.spotify.recommendations(genres = genres, limit = limit)
         recconmendations = json.loads(response.json())
-        songList = self.prettify(recconmendations)
+        songList = self.prettify(recconmendations, genres)
 
         return songList
 
@@ -34,7 +30,7 @@ class spotify(object):
         return self.recommend([genre], limit=1)[0]
 
 
-    def prettify(self, songs):
+    def prettify(self, songs, genres):
         songList = []
         for track in songs.get('tracks', []):
             song = {}
@@ -44,6 +40,7 @@ class spotify(object):
             for artist in track['artists']:
                 song['artists'].append(artist['name'])
             respond = "NAME:\n" + song['name'] + '\n'
+            respond = respond + 'GENRES:' + str(genres) + '\n'
             respond = respond + 'URL:\n' + song['url'] + '\n'
             respond = respond + 'ARTISTS:\n' + str(song['artists'])
             songList.append(respond)
@@ -73,7 +70,7 @@ class spellCheck(object):
             if distance < minimum:
                 minimum = distance
                 sugg = suggestion
-        return sugg
+        return sugg if sugg else word
 
 
     def levenshtein_distance(self, source, target, ins_cost = 1, del_cost = 2, rep_cost = 1):
@@ -120,23 +117,19 @@ class spellCheck(object):
                         replacements.append(L+letter+R[1:])
         replace_set = set(replacements)
         replacements = sorted(list(replace_set))
-        inserts = list()
-        for L, R in splits:
-            for letter in LETTERS:
-                inserts.append(L+letter+R)
+        transposes = [L + R[1] + R[0] + R[2:] for L, R in splits if R]
+        inserts = [L + letter + R for L, R in splits for letter in LETTERS]
+
         singleEdit = set()
-        singleEdit.update(deletes + replacements + inserts)
+        singleEdit.update(deletes + replacements + inserts + transposes)
 
         return singleEdit
 
     def doubleEdits(self, word): 
 
         singleEdit = self.singleEdits(word)
-        doubleEdit = set()
-        for edit in singleEdit:
-            if edit:
-                secondEdit = self.singleEdits(edit)
-                doubleEdit.update(secondEdit)
+        doubleEdit = [self.singleEdits(edit) for edit in singleEdit if edit]
+        doubleEdit = set(doubleEdit)
 
         return doubleEdit
 

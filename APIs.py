@@ -4,6 +4,9 @@ import json
 import os
 import time
 from typing import List
+from PIL import Image 
+import urllib.request
+import io
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -12,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def getContact(number:str) -> str:
-    numberbook_url = os.getenv("NUMBERBOOK_URL")
+    numberbook_url = 'https://rdod.live/contacts_api/api.php'
     url = numberbook_url+"?getName=true&phone="+number
     try:
         response = requests.get(url)
@@ -116,5 +119,65 @@ def get_animes_current_season() -> List[str]:
 
     return telegram_messages
 
+# def getChaptersIDs(MangaName:str) -> tuple[int, List[str]]:
+#     mangadex = "https://api.mangadex.org"
+#     try:
+#         response = requests.get(
+#             f"{mangadex}/manga",
+#             params={"title": MangaName}
+#         )
+#         if not response.ok:
+#             raise Exception('Manga not found')
 
+#         IDs = [manga["id"] for manga in response.json()["data"]]
+#         response = requests.get(f"{mangadex}/manga/{IDs[0]}/feed")
 
+#         if not response.ok:
+#             raise Exception('Manga not found')
+        
+#         ChaptersIDs = [chapter["id"] for chapter in response.json()["data"]]
+#         return len(ChaptersIDs), ChaptersIDs
+#     except Exception as error:
+#         return 0, [repr(error)]
+
+def getChapter(MangaName:str) -> dict: 
+    mangadex = "https://api.mangadex.org"
+    try:
+        response = requests.get(
+            f"{mangadex}/manga",
+            params={"title": MangaName}
+        )
+        if not response.ok:
+            raise Exception('Manga not found')
+
+        IDs = [manga["id"] for manga in response.json()["data"]]
+        response = requests.get(f"{mangadex}/manga/{IDs[0]}/feed")
+
+        if not response.ok:
+            raise Exception('Manga not found')
+        
+        # ChaptersIDs = [chapter["id"] for chapter in response.json()["data"]]
+        latest = response.json()['data'][-1]['id'] 
+        response = requests.get(f"{mangadex}/at-home/server/{latest}")
+        if not response.ok:
+            raise Exception('Chapter not found')
+        
+        chapter = response.json()
+        chapter_data = chapter['chapter']['data']
+
+        imgs = []
+        for chapter_pic in chapter_data:
+            URL = f"https://uploads.mangadex.org/data/{chapter['chapter']['hash']}/{chapter_pic}"
+            with urllib.request.urlopen(URL) as url:
+                try:
+                    f = io.BytesIO(url.read())
+                    imgs.append(Image.open(f))
+                except:
+                    continue
+            
+        imgs[0].save(
+            f"{MangaName}.pdf", "PDF" ,resolution=100.0, save_all=True, append_images=imgs[1:]
+        )
+        return {'success':True, 'file':f"{MangaName}.pdf"}
+    except Exception as error:
+        return {'success':False, 'Exception':repr(error)}
