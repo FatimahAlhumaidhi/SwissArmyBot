@@ -4,7 +4,6 @@ import pytz
 
 from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
 from telegram.update import Update
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
 
 from APIs import getContact, lookUp, get_animes_current_season, getChapter
@@ -36,33 +35,21 @@ def numberBook(update: Update, context: CallbackContext):
 	phone = update.message.text.replace('/whodis ', '') 
 	update.message.reply_text(getContact(phone))
 
-
-
 def randomsong(update: Update, context: CallbackContext):
 	client = spotify()
 	song = client.randomSong()
 	update.message.reply_text(song)
 
-async def SongByGenre(update: Update, context: CallbackContext):
-	client = spotify()
-
-	keyboard = [InlineKeyboardButton(genre, callback_data=str(i)) for i, genre in enumerate(client.genres)]
-	reply_markup = InlineKeyboardMarkup(keyboard)
-	
-	await update.message.reply_text("Choose genre from below:", reply_markup=reply_markup) #to be completed
-
-
 
 def activate_animes_current_season(update: Update, context: CallbackContext):
 	context.bot.send_message(chat_id=update.effective_chat.id, text="You will receieve this weekly every Tues at 11:35 PM")
 	job_queue = updater.job_queue
-	job_queue.run_daily(animes_current_season, time=time(23, 35, 0, 0, pytz.timezone("Asia/Riyadh")), days=(1,), context=context)
+	job_queue.run_daily(animes_current_season, time=time(23, 35, 0, 0, pytz.timezone("Asia/Riyadh")), days=(1,), context=update.message.chat_id)
 	
 def animes_current_season(context: CallbackContext):
 	messages = get_animes_current_season()
 	for message in messages:
 		context.bot.send_message(chat_id=context.job.context, text=message)
-
 
 
 def process(dictlist, update: Update):
@@ -78,19 +65,22 @@ def process(dictlist, update: Update):
             response = response + definition['dictionary'] + '\n'
             update.message.reply_text(response)
 
-def fromDictionary(update: Update):
+def fromDictionary(update: Update, context: CallbackContext):
 	text = update.message.text.replace('/define ', '') 
 	definitions = lookUp(text) 
 	process(definitions, update)
 
-
 	
 def MangaChapter(update: Update, context: CallbackContext):
-	name = update.message.text.replace('/getlatestchapter ', '') 
+	name = update.message.text.replace('/getlatestchapter ', '')
 	update.message.reply_text('please wait, this may take a while.')
 	info = getChapter(name)
 	if info['success']:
-		context.bot.send_document(chat_id=update.effective_chat.id,document=open(info['file'], 'rb'), filename=info['file'])
+		try:
+			context.bot.send_document(chat_id=update.effective_chat.id,document=open(info['file'], 'rb'), filename=info['file'])
+			update.message.reply_text('please be informed that the mangaAPI may be outdated.')
+		except:
+			update.message.reply_text(f"sorry, chapter could not be sent for some reason, try reading it online {info['url']}")
 	else:
 		update.message.reply_text(info['Exception'])
 	os.remove(info['file'])
@@ -105,7 +95,7 @@ def setUp(telegram_token):
 	dispatcher.add_handler(CommandHandler('randomsong', randomsong))
 	dispatcher.add_handler(CommandHandler('whodis', numberBook))
 	dispatcher.add_handler(CommandHandler('define', fromDictionary))
-	dispatcher.add_handler(CommandHandler('animeseason', activate_animes_current_season))
+	dispatcher.add_handler(CommandHandler('animeseason', activate_animes_current_season, pass_job_queue=True))
 	dispatcher.add_handler(CommandHandler('getlatestchapter', MangaChapter))
 		
 	dispatcher.add_handler(MessageHandler(Filters.text, unknown))
@@ -122,5 +112,5 @@ if __name__ == "__main__":
 	# updater.start_polling()
 	# print('now running')
 	# updater.idle()
-	updater.start_webhook(listen="0.0.0.0", port=int(os.environ.get('PORT', 5000)), url_path=telegram_token)
+	updater.start_webhook(listen="0.0.0.0", port=5000, url_path=telegram_token)
 	updater.bot.setWebhook(webhook + telegram_token)

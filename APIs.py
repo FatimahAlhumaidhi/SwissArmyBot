@@ -1,7 +1,5 @@
 import requests
 import urllib.parse
-import json
-import os
 import time
 from typing import List
 from PIL import Image 
@@ -10,6 +8,7 @@ import io
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,7 +24,7 @@ def getContact(number:str) -> str:
            for elem in data['data']:
                names.append(elem['name'])
            names = set(names)
-           return str(names)
+           return '\n'.join(names)
         else:
             return 'could not find any record for this number'
     except:
@@ -33,13 +32,13 @@ def getContact(number:str) -> str:
 
 
 def lookUp(word:str) -> str:
-    executable_path = os.path.join('chromedriver_win32', 'chromedriver.exe')
     try:
-        driver = webdriver.Chrome(executable_path=executable_path)
+        driver = webdriver.Edge(EdgeChromiumDriverManager().install())
         url = 'https://www.almaany.com/ar/dict/ar-ar/{}/'.format(urllib.parse.quote_plus(word))
 
         driver.get(url)
         html = driver.page_source
+        print(html)
         time.sleep(2)
 
         result = driver.find_elements(By.CLASS_NAME, 'meaning-results')
@@ -118,26 +117,9 @@ def get_animes_current_season() -> List[str]:
 
     return telegram_messages
 
-# def getChaptersIDs(MangaName:str) -> tuple[int, List[str]]:
-#     mangadex = "https://api.mangadex.org"
-#     try:
-#         response = requests.get(
-#             f"{mangadex}/manga",
-#             params={"title": MangaName}
-#         )
-#         if not response.ok:
-#             raise Exception('Manga not found')
-
-#         IDs = [manga["id"] for manga in response.json()["data"]]
-#         response = requests.get(f"{mangadex}/manga/{IDs[0]}/feed")
-
-#         if not response.ok:
-#             raise Exception('Manga not found')
-        
-#         ChaptersIDs = [chapter["id"] for chapter in response.json()["data"]]
-#         return len(ChaptersIDs), ChaptersIDs
-#     except Exception as error:
-#         return 0, [repr(error)]
+def latestChapter(response):
+    chapters = [(chapter['id'], float(chapter['attributes']['chapter']), chapter) for chapter in response.json()['data'] if chapter['attributes']['translatedLanguage'] == 'en']
+    return max(chapters, key = lambda x : x[1])
 
 def getChapter(MangaName:str) -> dict: 
     mangadex = "https://api.mangadex.org"
@@ -147,19 +129,21 @@ def getChapter(MangaName:str) -> dict:
             params={"title": MangaName}
         )
         if not response.ok:
-            raise Exception('Manga not found')
+            raise Exception('No manga found :(')
 
         IDs = [manga["id"] for manga in response.json()["data"]]
         response = requests.get(f"{mangadex}/manga/{IDs[0]}/feed")
 
         if not response.ok:
-            raise Exception('Manga not found')
+            raise Exception('No manga found :(')
         
-        # ChaptersIDs = [chapter["id"] for chapter in response.json()["data"]]
-        latest = response.json()['data'][-1]['id'] 
-        response = requests.get(f"{mangadex}/at-home/server/{latest}")
+        latest = latestChapter(response)
+        response = requests.get(f"{mangadex}/at-home/server/{latest[0]}")
         if not response.ok:
-            raise Exception('Chapter not found')
+            if latest[2]['attributes']['externalUrl']:
+                raise Exception(f"could not send chapter, try reading it online: {latest[2]['attributes']['externalUrl']}")
+            else:
+                raise Exception('No chapter found :(')
         
         chapter = response.json()
         chapter_data = chapter['chapter']['data']
@@ -174,9 +158,10 @@ def getChapter(MangaName:str) -> dict:
                 except:
                     continue
             
+        filename = f"{MangaName}-{str(int(latest[1]))}.pdf"
         imgs[0].save(
-            f"{MangaName}.pdf", "PDF" ,resolution=100.0, save_all=True, append_images=imgs[1:]
+            filename, "PDF" ,resolution=100.0, save_all=True, append_images=imgs[1:]
         )
-        return {'success':True, 'file':f"{MangaName}.pdf"}
+        return {'success':True, 'file':filename, 'url':latest[2]['attributes']['externalUrl'] if latest[2]['attributes']['externalUrl'] else ':P'}
     except Exception as error:
-        return {'success':False, 'Exception':repr(error)}
+        return {'success':False, 'Exception':str(error)}

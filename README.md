@@ -34,7 +34,7 @@ The bot currently supports the following commands:
 - `/define` يرجع لك تعريف كلمة في معجم
 - `/whodis` ترسل رقم سعودي ويعطيك الأسماء المسجلة له
 - `/animeseason` يرسل لك لستة بأنميات الموسم أسبوعيا
-- `/GetLatestChapter` يرسل لك آخر تشابتر نزل لمانجا بترجمة انجليزية
+- `/getlatestchapter` يرسل لك آخر تشابتر نزل لمانجا بترجمة انجليزية
 
 ## Extending the Bot
 

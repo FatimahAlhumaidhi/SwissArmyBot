@@ -161,3 +161,4 @@ cython_debug/
 
 Extra
 data
+*.ipynb
