@@ -42,7 +42,7 @@ def randomsong(update: Update, context: CallbackContext):
 
 
 def activate_animes_current_season(update: Update, context: CallbackContext):
-	context.bot.send_message(chat_id=update.effective_chat.id, text="You will receieve this weekly every Tues at 11:35 PM")
+	context.bot.send_message(chat_id=update.message.chat_id, text="You will receieve this weekly every Tues at 11:35 PM")
 	job_queue = updater.job_queue
 	job_queue.run_daily(animes_current_season, time=time(23, 35, 0, 0, pytz.timezone("Asia/Riyadh")), days=(1,), context=update.message.chat_id)
 	
@@ -81,9 +81,9 @@ def MangaChapter(update: Update, context: CallbackContext):
 			update.message.reply_text('please be informed that the mangaAPI may be outdated.')
 		except:
 			update.message.reply_text(f"sorry, chapter could not be sent for some reason, try reading it online {info['url']}")
+		os.remove(info['file'])
 	else:
 		update.message.reply_text(info['Exception'])
-	os.remove(info['file'])
 
 
 def setUp(telegram_token):
@@ -112,5 +112,8 @@ if __name__ == "__main__":
 	# updater.start_polling()
 	# print('now running')
 	# updater.idle()
-	updater.start_webhook(listen="0.0.0.0", port=5000, url_path=telegram_token)
-	updater.bot.setWebhook(webhook + telegram_token)
+	updater.start_webhook(listen="0.0.0.0", 
+		       port=int(os.environ.get('PORT', 8443)),
+		       url_path=telegram_token,
+		       webhook_url='https://{}.herokuapp.com/{}'.format(webhook, telegram_token))
+	# updater.bot.setWebhook('https://{}.herokuapp.com/{}'.format(webhook, telegram_token))

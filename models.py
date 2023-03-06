@@ -49,12 +49,11 @@ class spotify(object):
 
 
 class spellCheck(object):
-    def __init__(self, dir=''):
+    def __init__(self, dir='data\\vocab.txt'):
         with open(dir, 'r') as file:
             text = file.read()
         
-        text = text.lower()
-        self.vocab = set(re.findall('^[\u0621-\u064A]+$',text))
+        self.vocab = list(re.findall('[\u0621-\u064A]+',text))
 
     def spell(self, word):
         if word in self.vocab:
@@ -132,12 +131,3 @@ class spellCheck(object):
         doubleEdit = set(doubleEdit)
 
         return doubleEdit
-
-
-
-class grammerCheck(object):
-    pass
-
-
-
-    
