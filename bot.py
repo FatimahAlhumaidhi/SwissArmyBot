@@ -116,4 +116,3 @@ if __name__ == "__main__":
 		       port=int(os.environ.get('PORT', 8443)),
 		       url_path=telegram_token,
 		       webhook_url='https://{}.herokuapp.com/{}'.format(webhook, telegram_token))
-	# updater.bot.setWebhook('https://{}.herokuapp.com/{}'.format(webhook, telegram_token))

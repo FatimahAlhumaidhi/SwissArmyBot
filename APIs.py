@@ -32,14 +32,12 @@ def getContact(number:str) -> str:
 
 
 def lookUp(word:str) -> str:
-    try:
+    # try:
         driver = webdriver.Edge(EdgeChromiumDriverManager().install())
         url = 'https://www.almaany.com/ar/dict/ar-ar/{}/'.format(urllib.parse.quote_plus(word))
 
         driver.get(url)
-        html = driver.page_source
-        print(html)
-        time.sleep(2)
+        time.sleep(1)
 
         result = driver.find_elements(By.CLASS_NAME, 'meaning-results')
         if len(result) < 2:
@@ -63,8 +61,8 @@ def lookUp(word:str) -> str:
                 continue
             List.append(defin)
         return List
-    except:
-        return 'مدري'
+    # except:
+        # return 'مدري'
 
 
     
@@ -141,7 +139,7 @@ def getChapter(MangaName:str) -> dict:
         response = requests.get(f"{mangadex}/at-home/server/{latest[0]}")
         if not response.ok:
             if latest[2]['attributes']['externalUrl']:
-                raise Exception(f"could not send chapter, try reading it online: {latest[2]['attributes']['externalUrl']}")
+                raise Exception(f"could not find chapter, try reading it online: {latest[2]['attributes']['externalUrl']}")
             else:
                 raise Exception('No chapter found :(')
         
