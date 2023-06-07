@@ -68,8 +68,8 @@ def lookUp(word:str):
 
         return myList
 
-    except:
-        return 'مدري'
+    except Exception as e:
+        return str(e)
 
 def get_access_token(credentials):
     url = 'https://accounts.spotify.com/api/token'

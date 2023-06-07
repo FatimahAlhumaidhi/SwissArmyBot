@@ -57,8 +57,8 @@ def randomsong(update: Update, context: CallbackContext):
 
 def activate_animes_current_season(update: Update, context: CallbackContext):
 	job_queue = context.job_queue
-	job_queue.run_daily(animes_current_season, time=time(23, 35, 0, 0, pytz.timezone("Asia/Riyadh")), days=(1,), context={'chat_id': update.message.chat_id})
-	context.bot.send_message(chat_id=update.message.chat_id, text="You will receieve anime updates weekly every Tues at 11:35 PM")
+	job_queue.run_daily(animes_current_season, time=time(23, 35, 0, 0, pytz.timezone("Asia/Riyadh")), days=(2,), context={'chat_id': update.message.chat_id})
+	context.bot.send_message(chat_id=update.message.chat_id, text="You will receieve anime updates weekly every Wednesday at 11:35 PM")
 	
 def animes_current_season(context: CallbackContext):
 	try:
@@ -93,16 +93,16 @@ def process(dictlist, update: Update):
             update.message.reply_text(response)
 
 def fromDictionary(update: Update, context: CallbackContext):
-	try:
-		text = update.message.text.replace('/define ', '')
-		text = update.message.text.replace('/define', '')
-		if len(text) < 2:
-			update.message.reply_text('please send word with command call (e.g. /define قرنبيط)')
-			return
-		definitions = lookUp(text)
-		process(definitions, update)
-	except Exception as e:
-		logging.exception('An error occurred while calling lookUp: {}'.format(str(e)))
+	# try:
+	text = update.message.text.replace('/define ', '')
+	text = update.message.text.replace('/define', '')
+	if len(text) < 2:
+		update.message.reply_text('please send word with command call (e.g. /define قرنبيط)')
+		return
+	definitions = lookUp(text)
+	process(definitions, update)
+	# except Exception as e:
+	# 	logging.exception('An error occurred while calling lookUp: {}'.format(str(e)))
 
 
 	
