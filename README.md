@@ -27,14 +27,22 @@ The bot will then start and listen for incoming messages on your Telegram Bot.
 ## Features
 
 The bot currently supports the following commands:
-أوامر البوت:
 
-- `/spell` يتحقق من صحة الإملاء في جملة عربية
-- `/randomsong` يرسل لك أغنية عشوائية
-- `/define` يرجع لك تعريف كلمة في معجم
-- `/whodis` ترسل رقم سعودي ويعطيك الأسماء المسجلة له
-- `/animeseason` يرسل لك لستة بأنميات الموسم أسبوعيا
-- `/getlatestchapter` يرسل لك آخر تشابتر نزل لمانجا بترجمة انجليزية
+/define this command searches for the specified word in almaany.com and returns part of the resulted output.* 
+
+/whodis this command uses an API to look up names registered for a saudi number (formatted 05XXXXXXXX).*
+
+/animeseason this command uses jikan.moe (UNOFFICIAL MYANIMELIST API) to get the latest anime news for this season. 
+
+/getlatestchapter this command uses mangadex.org API to get the latest chapter for a specified manga.*
+
+/spell this command uses the King Saud University Corpus of Classical Arabic (KSUCCA) as a refrence to fix arabic words in a message using string matching (the corpus contains 377366 unique words).
+
+/randomsong this command uses spotify API to request a song based on a randmonly chosen genre.
+
+*commands specified with an astrik needs context in the same command message (e.g. /define بقسماط).
+
+contact https://t.me/westandasone for suggestions or questions.
 
 ## Extending the Bot
 

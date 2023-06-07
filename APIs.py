@@ -1,14 +1,13 @@
-import requests
+import requests, time
 import urllib.parse
-import time
 from typing import List
 from PIL import Image 
 import urllib.request
-import io
+import io, os, random, base64
+from bs4 import BeautifulSoup
+import csv, re
+from difflib import get_close_matches
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -31,39 +30,119 @@ def getContact(number:str) -> str:
         return 'sorry, something went wrong.'
 
 
-def lookUp(word:str) -> str:
-    # try:
-        driver = webdriver.Edge(EdgeChromiumDriverManager().install())
+def lookUp(word:str):
+    try:
+        userAgentList = ['Mozilla/5.0', 'Safari/537.36', 'Chrome/67.0.3396.99',] # 'iexplore/11.0.9600.19080', 'Trident/7.0', 'SeaMonkey/2.40', 'Wyzo/3.6.4.1', 'OPR/54.0.2952.64'
+        user_agent = random.choice(userAgentList)
+
         url = 'https://www.almaany.com/ar/dict/ar-ar/{}/'.format(urllib.parse.quote_plus(word))
+        headers = {'User-Agent': user_agent}
 
-        driver.get(url)
-        time.sleep(1)
+        request = urllib.request.Request(url, headers=headers)
+        handle = urllib.request.urlopen(request)
 
-        result = driver.find_elements(By.CLASS_NAME, 'meaning-results')
-        if len(result) < 2:
+        html = handle.read().decode(handle.headers.get_content_charset())
+        soup = BeautifulSoup(html, 'html.parser')
+
+        result = soup.find_all(class_='meaning-results')
+        if result is None:
             try:
-                result = driver.find_elements(By.XPATH, '/html/body/section/div/div[2]/div[1]/div[1]/p')
+                result = soup.select('html > body > section > div > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > p')
                 return result[0].text
             except:
-                return 'عذراً لم يفلح بحثك بالعثور على أي نتائج'
-        elems = result[1].find_elements(By.TAG_NAME, 'li')
+                return 'مدري'
 
         List = []
+        elems = result[-1].find_all('li')
         for elem in elems:
             defin = {}
-            get = elem.find_elements(By.TAG_NAME, 'span')
-            defin['word'] = get[0].text.replace('\n', '') if len(get)> 0 else None
-            get = elem.find_elements(By.TAG_NAME, 'ul')
-            defin['meaning'] = get[0].text.replace('\n', '') if len(get)> 0 else None
-            get = elem.find_elements(By.TAG_NAME, 'p')
-            defin['dictionary'] = get[0].text.replace('\n', '') if len(get)> 0 else None
-            if not all([defin['word'], defin['meaning'], defin['dictionary']]):
+            word = elem.find('span')
+            if word is None:
                 continue
+            meaning = elem.find('ul')
+            dictionary = elem.find(class_='small')
+            defin['word'] = word.text.replace('\n', '')
+            defin['meaning'] = meaning.text.replace('\n', '')
+            defin['dictionary'] = dictionary.text.replace('\n', '')
             List.append(defin)
-        return List
-    # except:
-        # return 'مدري'
 
+        return List
+
+    except:
+        return 'مدري'
+
+def get_access_token(credentials):
+    url = 'https://accounts.spotify.com/api/token'
+    headers = {
+        'Authorization': 'Basic ' + credentials,
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    data = {
+        'grant_type': 'client_credentials'
+    }
+    try:
+        response = requests.post(url, headers=headers, data=data)
+        response_data = response.json()
+        return response_data['access_token']
+    except:
+        return ''
+
+def get_available_genre_seeds(access_token):
+    url = 'https://api.spotify.com/v1/recommendations/available-genre-seeds'
+    headers = {
+        'Authorization': 'Bearer ' + access_token
+    }
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+def get_recommendations(access_token, seed_genres, limit):
+    url = 'https://api.spotify.com/v1/recommendations'
+    headers = {
+        'Authorization': 'Bearer ' + access_token
+    }
+    params = {
+        'seed_genres': seed_genres,
+        'limit': limit
+    }
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        return response.json()
+    except:
+        return ''
+
+def prettify(songs, genres):
+    songList = []
+    for track in songs.get('tracks'):
+        song = {}
+        song['name'] = track['name']
+        song['url'] = track['external_urls'].get('spotify', 'None')
+        song['artists'] = []
+        for artist in track['artists']:
+            song['artists'].append(artist['name'])
+        response = "NAME:\n" + song['name'] + '\n'
+        response = response + 'GENRE: ' + ', '.join(genres) + '\n'
+        response = response + 'URL:\n' + song['url'] + '\n'
+        response = response + 'ARTISTS:\n' + ', '.join(song['artists'])
+        songList.append(response)
+    return songList
+
+def getRandomSong():
+    spotify_client_id = os.getenv('SPOTIFY_CLIENT_ID')
+    spotify_secret_key = os.getenv('SPOTIFY_SECRET_KEY')
+
+    credentials = base64.b64encode(
+        (spotify_client_id + ':' + spotify_secret_key).encode('utf-8')
+    ).decode('utf-8')
+
+    try:
+        access_token = get_access_token(credentials)
+        genre_seeds = get_available_genre_seeds(access_token)
+        random_genre = random.choice(genre_seeds['genres'])
+        recommendations = get_recommendations(access_token, random_genre, 1)
+        formatted_recommendations = prettify(recommendations, [random_genre])
+        return '\n\n'.join(formatted_recommendations)
+    except:
+        return 'an error occurred'
 
     
 def get_animes_current_season() -> List[str]:
@@ -116,7 +195,10 @@ def get_animes_current_season() -> List[str]:
     return telegram_messages
 
 def latestChapter(response):
-    chapters = [(chapter['id'], float(chapter['attributes']['chapter']), chapter) for chapter in response.json()['data'] if chapter['attributes']['translatedLanguage'] == 'en']
+    chapters = [(chapter['id'], 
+                 float(chapter['attributes']['chapter']), 
+                 chapter['attributes']['externalUrl']) 
+                 for chapter in response.json()['data'] if chapter['attributes']['translatedLanguage'] == 'en']
     return max(chapters, key = lambda x : x[1])
 
 def getChapter(MangaName:str) -> dict: 
@@ -129,17 +211,39 @@ def getChapter(MangaName:str) -> dict:
         if not response.ok:
             raise Exception('No manga found :(')
 
-        IDs = [manga["id"] for manga in response.json()["data"]]
-        response = requests.get(f"{mangadex}/manga/{IDs[0]}/feed")
+        def find_closest_title(MangaName, names):
+            closest_string = None
+            closest_distance = float('inf')
+
+            for name in names:
+                distance = levenshtein_distance(MangaName, name[1])
+                if distance < closest_distance:
+                    closest_distance = distance
+                    closest_string = name
+
+            return closest_string
+        
+        mangas = [(manga["id"], manga["attributes"]["title"]["en"]) for manga in response.json()["data"]]
+        ID, TITLE = find_closest_title(MangaName, mangas)
+
+        if not len(ID):
+            raise Exception('No manga found :(')
+        
+        
+        response = requests.get(f"{mangadex}/manga/{ID}/feed")
 
         if not response.ok:
             raise Exception('No manga found :(')
         
         latest = latestChapter(response)
+        if not len(latest):
+            raise Exception('No chapter found :(')
+        
+        
         response = requests.get(f"{mangadex}/at-home/server/{latest[0]}")
         if not response.ok:
-            if latest[2]['attributes']['externalUrl']:
-                raise Exception(f"could not find chapter, try reading it online: {latest[2]['attributes']['externalUrl']}")
+            if latest[2] != '':
+                raise Exception(f"could not find chapter, try reading it online: {latest[2]}")
             else:
                 raise Exception('No chapter found :(')
         
@@ -152,14 +256,131 @@ def getChapter(MangaName:str) -> dict:
             with urllib.request.urlopen(URL) as url:
                 try:
                     f = io.BytesIO(url.read())
-                    imgs.append(Image.open(f))
+                    imgs.append(Image.open(f).convert('RGB'))
                 except:
                     continue
             
-        filename = f"{MangaName}-{str(int(latest[1]))}.pdf"
+        filename = f"{TITLE} ch.{str(int(latest[1]))}.pdf"
+        pdf_data = io.BytesIO()
+
         imgs[0].save(
-            filename, "PDF" ,resolution=100.0, save_all=True, append_images=imgs[1:]
+            pdf_data, "PDF", resolution=100.0, save_all=True, append_images=imgs[1:]
         )
-        return {'success':True, 'file':filename, 'url':latest[2]['attributes']['externalUrl'] if latest[2]['attributes']['externalUrl'] else ':P'}
+
+        pdf_data.seek(0)
+
+        return {'success':True, 'file':pdf_data, 'filename':filename, 'url': latest[2] if latest[2] else ':p'}
+    
     except Exception as error:
         return {'success':False, 'Exception':str(error)}
+
+def levenshtein_distance(source, target):
+    m = len(source)
+    n = len(target)
+
+    if m == 0:
+        return n
+    if n == 0:
+        return m
+
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+
+    for i in range(m + 1):
+        dp[i][0] = i
+
+    for j in range(n + 1):
+        dp[0][j] = j
+
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            cost = 0 if source[i - 1] == target[j - 1] else 1
+            dp[i][j] = min(
+                dp[i - 1][j] + 2,
+                dp[i][j - 1] + 2,
+                dp[i - 1][j - 1] + cost
+            )
+
+    return dp[m][n]
+
+def load_dictionary(dictionary_path='vocab_updated.csv'):
+    arabic_dictionary = {}
+    word_set = set()
+
+    with open(dictionary_path, 'r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            word = row['Word']
+            count = int(row['Count'])
+            arabic_dictionary.setdefault(len(word), {})[word] = count
+            word_set.add(word)
+
+    return arabic_dictionary, word_set
+
+def get_word_suggestions(word, arabic_dictionary):
+    suggestions = []
+    max_count = -float('inf')
+    min_distance = float('inf')
+    word_length = len(word)
+
+    for length in range(word_length - 1, word_length + 2):
+        for dict_word, count in arabic_dictionary.get(length, {}).items():
+            distance = levenshtein_distance(word, dict_word)
+            if distance < min_distance:
+                suggestions = [dict_word]
+                min_distance = distance
+                max_count = count
+            elif distance == min_distance:
+                if count > max_count:
+                    suggestions = [dict_word]
+                    max_count = count
+                elif count == max_count:
+                    suggestions.append(dict_word)
+
+    return suggestions
+
+def preprocess_text(text):
+    arabic_text = re.sub(r'[^\u0600-\u06FF\s]', '', text)
+    
+    tashkeel_mapping = {
+    '\u064B': '',
+    '\u064C': '',
+    '\u064D': '',
+    '\u064E': '',
+    '\u064F': '',
+    '\u0650': '',
+    '\u0651': '',
+    '\u0652': '',
+    '\u0653': '',
+    '\u061F': '',
+    '\u0640': '',
+    }
+
+    discretized_text = ''.join(tashkeel_mapping.get(char, char) for char in arabic_text)
+    discretized_text = re.sub(r'\s+', ' ', discretized_text)
+
+    return discretized_text
+
+
+def correct_spelling(text):
+    arabic_dictionary, word_set = load_dictionary()
+
+    text = preprocess_text(text)
+    if len(text) < 2:
+        return 'كيف الحال'
+    
+    words = text.split()
+    corrected_text = []
+
+    for word in words:
+        if word not in word_set:
+            suggestions = get_word_suggestions(word, arabic_dictionary)
+            if suggestions:
+                selected_word = min(suggestions, key=lambda x: (arabic_dictionary[len(word)][x], levenshtein_distance(word, x)))
+                corrected_text.append(selected_word)
+            else:
+                corrected_text.append(word)
+        else:
+            corrected_text.append(word)
+
+    return ' '.join(corrected_text)
+
