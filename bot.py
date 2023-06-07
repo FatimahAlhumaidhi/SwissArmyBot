@@ -148,13 +148,14 @@ def setUp(telegram_token):
 
 if __name__ == "__main__":
 	telegram_token = os.getenv("TELEGRAM_TOKEN")
-	webhook = os.getenv("WEB_HOOK")
 	updater = setUp(telegram_token)
 
-	updater.start_polling()
-	print('now running')
-	updater.idle()
-	# updater.start_webhook(listen="0.0.0.0", 
-	# 	       port=int(os.environ.get('PORT', 8443)),
-	# 	       url_path=telegram_token,
-	# 	       webhook_url='https://{}.herokuapp.com/{}'.format(webhook, telegram_token))
+	# updater.start_polling()
+	# print('now running')
+	# updater.idle()
+	updater.start_webhook(
+        listen='0.0.0.0',
+        port=int(os.environ.get('PORT', 5000)),
+        url_path=telegram_token,
+        webhook_url='https://swissarmybot.onrender.com/{}'.format(telegram_token)
+    )

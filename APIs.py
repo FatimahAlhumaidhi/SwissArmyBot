@@ -52,21 +52,21 @@ def lookUp(word:str):
             except:
                 return 'مدري'
 
-        List = []
+        myList = []
         elems = result[-1].find_all('li')
         for elem in elems:
             defin = {}
             word = elem.find('span')
-            if word is None:
-                continue
             meaning = elem.find('ul')
-            dictionary = elem.find(class_='small')
+            dictionary = elem.find('p')
+            if not all([word, meaning, dictionary]):
+                continue
             defin['word'] = word.text.replace('\n', '')
             defin['meaning'] = meaning.text.replace('\n', '')
             defin['dictionary'] = dictionary.text.replace('\n', '')
-            List.append(defin)
+            myList.append(defin)
 
-        return List
+        return myList
 
     except:
         return 'مدري'
@@ -375,8 +375,8 @@ def correct_spelling(text):
         if word not in word_set:
             suggestions = get_word_suggestions(word, arabic_dictionary)
             if suggestions:
-                selected_word = min(suggestions, key=lambda x: (arabic_dictionary[len(word)][x], levenshtein_distance(word, x)))
-                corrected_text.append(selected_word)
+                # selected_word = min(suggestions, key=lambda x: (arabic_dictionary[len(word)][x], levenshtein_distance(word, x)))
+                corrected_text.append(suggestions[0])
             else:
                 corrected_text.append(word)
         else:
